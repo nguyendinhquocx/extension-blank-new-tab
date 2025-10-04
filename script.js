@@ -4,9 +4,15 @@ const markdownPreview = document.querySelector('.markdown-preview');
 const markdownInput = document.querySelector('.markdown-input');
 
 // Configure marked
-marked.setOptions({
+marked.use({
     breaks: true,
-    gfm: true
+    gfm: true,
+    renderer: {
+        html(html) {
+            // Escape HTML to display as text instead of rendering
+            return html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+    }
 });
 
 // Toggle dark mode
