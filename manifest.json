@@ -11,5 +11,8 @@
   },
   "chrome_url_overrides": {
     "newtab": "tab.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

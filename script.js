@@ -1,37 +1,47 @@
 const trigger = document.querySelector('.trigger');
 const body = document.body;
-const textDisplay = document.querySelector('.text-display');
-const textInput = document.querySelector('.text-input');
+const markdownPreview = document.querySelector('.markdown-preview');
+const markdownInput = document.querySelector('.markdown-input');
+
+// Configure marked
+marked.setOptions({
+    breaks: true,
+    gfm: true
+});
 
 // Toggle dark mode
 trigger.addEventListener('click', function() {
     body.classList.toggle('dark-mode');
 });
 
-// Load saved text
-const savedText = localStorage.getItem('noteText') || '';
-textDisplay.textContent = savedText;
-textInput.value = savedText;
+// Load saved markdown
+const savedMarkdown = localStorage.getItem('noteMarkdown') || '';
+markdownPreview.innerHTML = marked.parse(savedMarkdown);
+markdownInput.value = savedMarkdown;
 
 // Double click to edit
 body.addEventListener('dblclick', function(e) {
     if (e.target === trigger) return;
-    textDisplay.style.display = 'none';
-    textInput.style.display = 'block';
-    textInput.focus();
+    markdownPreview.style.display = 'none';
+    markdownInput.style.display = 'block';
+    markdownInput.focus();
 });
 
-// Save and exit on blur
-textInput.addEventListener('blur', function() {
-    const text = textInput.value;
-    localStorage.setItem('noteText', text);
-    textDisplay.textContent = text;
-    textInput.style.display = 'none';
-    textDisplay.style.display = 'block';
+// Save and preview on blur
+markdownInput.addEventListener('blur', function() {
+    const markdown = markdownInput.value;
+    localStorage.setItem('noteMarkdown', markdown);
+    markdownPreview.innerHTML = marked.parse(markdown);
+    markdownInput.style.display = 'none';
+    markdownPreview.style.display = 'block';
 });
 
-// Auto-resize textarea
-textInput.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.max(100, this.scrollHeight) + 'px';
+// Live preview while typing (debounced)
+let previewTimeout;
+markdownInput.addEventListener('input', function() {
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(() => {
+        const markdown = markdownInput.value;
+        localStorage.setItem('noteMarkdown', markdown);
+    }, 500);
 });
