@@ -1,0 +1,41 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #fff;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    transition: background-color 0.3s;
+}
+
+body.dark-mode {
+    background-color: #000;
+}
+
+.trigger {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 16px;
+    height: 16px;
+    background-color: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.trigger:hover {
+    background-color: #000;
+}
+
+body.dark-mode .trigger {
+    background-color: #000;
+}
+
+body.dark-mode .trigger:hover {
+    background-color: #fff;
+}
