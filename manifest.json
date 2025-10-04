@@ -1,0 +1,15 @@
+{
+  "name": "Blank New Tab Page",
+  "version": "2.0",
+  "manifest_version": 3,
+  "description": "The ultimate speed boost for Chrome, an empty new tab page!",
+  "icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "chrome_url_overrides": {
+    "newtab": "tab.html"
+  }
+}
