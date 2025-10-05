@@ -15,7 +15,9 @@ const DOM = {
     trigger: document.querySelector('.trigger'),
     body: document.body,
     preview: document.querySelector('.markdown-preview'),
-    input: document.querySelector('.markdown-input')
+    input: document.querySelector('.markdown-input'),
+    exportButtons: document.querySelector('.export-buttons'),
+    exportBtns: document.querySelectorAll('.export-btn')
 };
 
 // ============================================================================
@@ -55,6 +57,125 @@ const ThemeManager = {
     init() {
         DOM.trigger.addEventListener('click', () => {
             DOM.body.classList.toggle('dark-mode');
+        });
+    }
+};
+
+// ============================================================================
+// EXPORT MANAGER
+// ============================================================================
+const ExportManager = {
+    downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+    },
+
+    exportTXT(content) {
+        this.downloadFile(content, 'file.txt', 'text/plain');
+    },
+
+    exportMD(content) {
+        this.downloadFile(content, 'file.md', 'text/markdown');
+    },
+
+    exportPDF(content) {
+        const html = marked.parse(content);
+        const timestamp = new Date().toISOString().split('T')[0];
+
+        const printWindow = window.open('', '', 'width=800,height=600');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Export PDF</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        line-height: 1.6;
+                        max-width: 800px;
+                        margin: 40px auto;
+                        padding: 20px;
+                        color: #000;
+                    }
+                    h1, h2, h3, h4, h5, h6 {
+                        font-weight: 600;
+                        margin-top: 1.5em;
+                        margin-bottom: 0.5em;
+                    }
+                    code {
+                        background-color: #f5f5f5;
+                        padding: 2px 6px;
+                        border-radius: 3px;
+                        font-family: 'Consolas', monospace;
+                    }
+                    pre {
+                        background-color: #f5f5f5;
+                        padding: 16px;
+                        border-radius: 4px;
+                        overflow-x: auto;
+                    }
+                    pre code {
+                        background: none;
+                        padding: 0;
+                    }
+                    blockquote {
+                        border-left: 3px solid #e0e0e0;
+                        padding-left: 1em;
+                        color: #666;
+                    }
+                    table {
+                        border-collapse: collapse;
+                        width: 100%;
+                    }
+                    th, td {
+                        padding: 8px 12px;
+                        text-align: left;
+                    }
+                    th {
+                        font-weight: 600;
+                        border-bottom: 1px solid #e0e0e0;
+                    }
+                </style>
+            </head>
+            <body>${html}</body>
+            </html>
+        `);
+        printWindow.document.close();
+
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+    },
+
+    updateVisibility(content) {
+        if (content.trim().length > 0) {
+            DOM.exportButtons.classList.add('visible');
+        } else {
+            DOM.exportButtons.classList.remove('visible');
+        }
+    },
+
+    init() {
+        DOM.exportBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const format = btn.dataset.format;
+                const content = Storage.load();
+
+                if (format === 'txt') {
+                    this.exportTXT(content);
+                } else if (format === 'md') {
+                    this.exportMD(content);
+                } else if (format === 'pdf') {
+                    this.exportPDF(content);
+                }
+            });
         });
     }
 };
@@ -132,6 +253,7 @@ const EditorManager = {
 
     saveContent(content) {
         Storage.save(content);
+        ExportManager.updateVisibility(content);
     },
 
     autosave(content) {
@@ -173,6 +295,7 @@ const App = {
     init() {
         MarkdownConfig.init();
         ThemeManager.init();
+        ExportManager.init();
         this.loadSavedContent();
         this.attachEventListeners();
     },
@@ -181,6 +304,7 @@ const App = {
         const savedMarkdown = Storage.load();
         DOM.preview.innerHTML = marked.parse(savedMarkdown);
         DOM.input.value = savedMarkdown;
+        ExportManager.updateVisibility(savedMarkdown);
     },
 
     attachEventListeners() {

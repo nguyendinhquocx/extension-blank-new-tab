@@ -206,3 +206,39 @@ body.dark-mode .trigger {
 body.dark-mode .trigger:hover {
     background-color: #fff;
 }
+
+.export-buttons {
+    position: fixed;
+    top: 52px;
+    right: 20px;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.export-buttons.visible {
+    display: flex;
+}
+
+.export-btn {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: color 0.2s;
+}
+
+.export-btn:hover {
+    color: #000;
+}
+
+body.dark-mode .export-btn {
+    color: #000;
+}
+
+body.dark-mode .export-btn:hover {
+    color: #fff;
+}
