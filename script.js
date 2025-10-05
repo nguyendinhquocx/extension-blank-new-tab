@@ -1,94 +1,194 @@
-const trigger = document.querySelector('.trigger');
-const body = document.body;
-const markdownPreview = document.querySelector('.markdown-preview');
-const markdownInput = document.querySelector('.markdown-input');
+// ============================================================================
+// CONFIG
+// ============================================================================
+const CONFIG = {
+    STORAGE_KEY: 'noteMarkdown',
+    LINE_HEIGHT: 1.6 * 16,
+    PADDING: 20,
+    AUTOSAVE_DELAY: 500
+};
 
-// Configure marked
-marked.use({
-    breaks: true,
-    gfm: true,
-    renderer: {
-        html(html) {
-            // Escape HTML to display as text instead of rendering
-            return html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
+// ============================================================================
+// DOM ELEMENTS
+// ============================================================================
+const DOM = {
+    trigger: document.querySelector('.trigger'),
+    body: document.body,
+    preview: document.querySelector('.markdown-preview'),
+    input: document.querySelector('.markdown-input')
+};
+
+// ============================================================================
+// MARKDOWN CONFIG
+// ============================================================================
+const MarkdownConfig = {
+    init() {
+        marked.use({
+            breaks: true,
+            gfm: true,
+            renderer: {
+                html(html) {
+                    return html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                }
+            }
+        });
     }
-});
+};
 
-// Toggle dark mode
-trigger.addEventListener('click', function() {
-    body.classList.toggle('dark-mode');
-});
+// ============================================================================
+// STORAGE MANAGER
+// ============================================================================
+const Storage = {
+    save(content) {
+        localStorage.setItem(CONFIG.STORAGE_KEY, content);
+    },
 
-// Load saved markdown
-const savedMarkdown = localStorage.getItem('noteMarkdown') || '';
-markdownPreview.innerHTML = marked.parse(savedMarkdown);
-markdownInput.value = savedMarkdown;
+    load() {
+        return localStorage.getItem(CONFIG.STORAGE_KEY) || '';
+    }
+};
 
-// Double click to edit
-body.addEventListener('dblclick', function(e) {
-    if (e.target === trigger) return;
+// ============================================================================
+// THEME MANAGER
+// ============================================================================
+const ThemeManager = {
+    init() {
+        DOM.trigger.addEventListener('click', () => {
+            DOM.body.classList.toggle('dark-mode');
+        });
+    }
+};
 
-    // Calculate click position relative to page
-    const clickY = e.clientY + window.scrollY;
+// ============================================================================
+// SCROLL MANAGER
+// ============================================================================
+const ScrollManager = {
+    centerPosition(yPosition) {
+        requestAnimationFrame(() => {
+            const targetScroll = yPosition - (window.innerHeight / 2);
+            window.scrollTo(0, Math.max(0, targetScroll));
+        });
+    },
 
-    markdownPreview.style.display = 'none';
-    markdownInput.style.display = 'block';
+    calculateCursorY(lineNumber) {
+        return CONFIG.PADDING + (lineNumber - 1) * CONFIG.LINE_HEIGHT;
+    }
+};
 
-    requestAnimationFrame(() => {
-        markdownInput.focus();
-
-        // Calculate approximate cursor position in textarea
-        const text = markdownInput.value;
-        const lineHeight = 1.6 * 16; // line-height * font-size
-        const padding = 20;
-        const clickLine = Math.floor((clickY - padding) / lineHeight);
-
-        // Set cursor position
+// ============================================================================
+// CURSOR MANAGER
+// ============================================================================
+const CursorManager = {
+    calculatePositionFromClick(clickY, text) {
+        const clickLine = Math.floor((clickY - CONFIG.PADDING) / CONFIG.LINE_HEIGHT);
         const lines = text.split('\n');
         let cursorPos = 0;
+
         for (let i = 0; i < Math.min(clickLine, lines.length); i++) {
-            cursorPos += lines[i].length + 1; // +1 for \n
+            cursorPos += lines[i].length + 1;
         }
 
-        markdownInput.setSelectionRange(cursorPos, cursorPos);
+        return cursorPos;
+    },
 
-        // Scroll to center the clicked line
-        const targetScroll = clickY - (window.innerHeight / 2);
-        window.scrollTo(0, Math.max(0, targetScroll));
-    });
-});
+    getLineNumber(text, cursorPos) {
+        return text.substring(0, cursorPos).split('\n').length;
+    }
+};
 
-// Save and preview on blur
-markdownInput.addEventListener('blur', function() {
-    const markdown = markdownInput.value;
-    localStorage.setItem('noteMarkdown', markdown);
+// ============================================================================
+// EDITOR MANAGER
+// ============================================================================
+const EditorManager = {
+    autosaveTimeout: null,
 
-    // Get cursor position to calculate scroll
-    const cursorPos = markdownInput.selectionStart;
-    const textBeforeCursor = markdownInput.value.substring(0, cursorPos);
-    const lineNumber = textBeforeCursor.split('\n').length;
-    const lineHeight = 1.6 * 16;
-    const padding = 20;
-    const cursorY = padding + (lineNumber - 1) * lineHeight;
+    switchToEdit(clickY) {
+        DOM.preview.style.display = 'none';
+        DOM.input.style.display = 'block';
 
-    markdownInput.style.display = 'none';
-    markdownPreview.innerHTML = marked.parse(markdown);
-    markdownPreview.style.display = 'block';
+        requestAnimationFrame(() => {
+            DOM.input.focus();
 
-    // Scroll to center the cursor position
-    requestAnimationFrame(() => {
-        const targetScroll = cursorY - (window.innerHeight / 2);
-        window.scrollTo(0, Math.max(0, targetScroll));
-    });
-});
+            const cursorPos = CursorManager.calculatePositionFromClick(
+                clickY,
+                DOM.input.value
+            );
 
-// Live preview while typing (debounced)
-let previewTimeout;
-markdownInput.addEventListener('input', function() {
-    clearTimeout(previewTimeout);
-    previewTimeout = setTimeout(() => {
-        const markdown = markdownInput.value;
-        localStorage.setItem('noteMarkdown', markdown);
-    }, 500);
-});
+            DOM.input.setSelectionRange(cursorPos, cursorPos);
+            ScrollManager.centerPosition(clickY);
+        });
+    },
+
+    switchToPreview(markdown, cursorPos) {
+        const lineNumber = CursorManager.getLineNumber(DOM.input.value, cursorPos);
+        const cursorY = ScrollManager.calculateCursorY(lineNumber);
+
+        DOM.input.style.display = 'none';
+        DOM.preview.innerHTML = marked.parse(markdown);
+        DOM.preview.style.display = 'block';
+
+        ScrollManager.centerPosition(cursorY);
+    },
+
+    saveContent(content) {
+        Storage.save(content);
+    },
+
+    autosave(content) {
+        clearTimeout(this.autosaveTimeout);
+        this.autosaveTimeout = setTimeout(() => {
+            this.saveContent(content);
+        }, CONFIG.AUTOSAVE_DELAY);
+    }
+};
+
+// ============================================================================
+// EVENT HANDLERS
+// ============================================================================
+const EventHandlers = {
+    onDoubleClick(e) {
+        if (e.target === DOM.trigger) return;
+
+        const clickY = e.clientY + window.scrollY;
+        EditorManager.switchToEdit(clickY);
+    },
+
+    onBlur() {
+        const markdown = DOM.input.value;
+        const cursorPos = DOM.input.selectionStart;
+
+        EditorManager.saveContent(markdown);
+        EditorManager.switchToPreview(markdown, cursorPos);
+    },
+
+    onInput() {
+        EditorManager.autosave(DOM.input.value);
+    }
+};
+
+// ============================================================================
+// APP INITIALIZATION
+// ============================================================================
+const App = {
+    init() {
+        MarkdownConfig.init();
+        ThemeManager.init();
+        this.loadSavedContent();
+        this.attachEventListeners();
+    },
+
+    loadSavedContent() {
+        const savedMarkdown = Storage.load();
+        DOM.preview.innerHTML = marked.parse(savedMarkdown);
+        DOM.input.value = savedMarkdown;
+    },
+
+    attachEventListeners() {
+        DOM.body.addEventListener('dblclick', EventHandlers.onDoubleClick);
+        DOM.input.addEventListener('blur', EventHandlers.onBlur);
+        DOM.input.addEventListener('input', EventHandlers.onInput);
+    }
+};
+
+// Start app
+App.init();
