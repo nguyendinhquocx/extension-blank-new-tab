@@ -2,7 +2,9 @@
   "name": "Blank New Tab",
   "version": "2.0",
   "manifest_version": 3,
-  "description": "The ultimate speed boost for Chrome, an empty new tab page!",
+  "description": "Minimal markdown note-taking on every new tab. Write, preview, export. Blazing fast, distraction-free.",
+  "author": "Quoc",
+  "homepage_url": "https://quoc.app/",
   "icons": {
     "16": "icon/16.png",
     "32": "icon/32.png",
