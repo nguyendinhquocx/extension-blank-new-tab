@@ -42,11 +42,11 @@ const MarkdownConfig = {
 // ============================================================================
 const Storage = {
     save(content) {
-        localStorage.setItem(CONFIG.STORAGE_KEY, content);
+        sessionStorage.setItem(CONFIG.STORAGE_KEY, content);
     },
 
     load() {
-        return localStorage.getItem(CONFIG.STORAGE_KEY) || '';
+        return sessionStorage.getItem(CONFIG.STORAGE_KEY) || '';
     }
 };
 
