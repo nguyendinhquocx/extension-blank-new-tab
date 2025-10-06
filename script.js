@@ -88,7 +88,17 @@ const ExportManager = {
     },
 
     exportPDF(content) {
-        const html = marked.parse(content);
+        // Detect if content is plain text/HTML code or markdown
+        const isPlainText = this.isPlainTextContent(content);
+
+        let bodyContent;
+        if (isPlainText) {
+            // Export as plain text with preserved formatting
+            bodyContent = `<pre style="white-space: pre-wrap; font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;">${this.escapeHtml(content)}</pre>`;
+        } else {
+            // Export as rendered markdown
+            bodyContent = marked.parse(content);
+        }
 
         const printWindow = window.open('', '', 'width=800,height=600');
         printWindow.document.write(`
@@ -99,12 +109,13 @@ const ExportManager = {
                 <title>Export PDF</title>
                 <style>
                     body {
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
                         line-height: 1.6;
                         max-width: 800px;
                         margin: 40px auto;
                         padding: 20px;
                         color: #000;
+                        font-size: 16px;
                     }
                     h1, h2, h3, h4, h5, h6 {
                         font-weight: 600;
@@ -115,13 +126,14 @@ const ExportManager = {
                         background-color: #f5f5f5;
                         padding: 2px 6px;
                         border-radius: 3px;
-                        font-family: 'Consolas', monospace;
+                        font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
                     }
                     pre {
                         background-color: #f5f5f5;
                         padding: 16px;
                         border-radius: 4px;
                         overflow-x: auto;
+                        white-space: pre-wrap;
                     }
                     pre code {
                         background: none;
@@ -146,7 +158,7 @@ const ExportManager = {
                     }
                 </style>
             </head>
-            <body>${html}</body>
+            <body>${bodyContent}</body>
             </html>
         `);
         printWindow.document.close();
