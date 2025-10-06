@@ -28,8 +28,12 @@ const MarkdownConfig = {
         marked.use({
             breaks: true,
             gfm: true,
+            mangle: false,
+            headerIds: false,
+            pedantic: false,
             renderer: {
                 html(html) {
+                    // Escape HTML to prevent rendering
                     return html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 }
             }
@@ -85,7 +89,6 @@ const ExportManager = {
 
     exportPDF(content) {
         const html = marked.parse(content);
-        const timestamp = new Date().toISOString().split('T')[0];
 
         const printWindow = window.open('', '', 'width=800,height=600');
         printWindow.document.write(`
@@ -154,6 +157,108 @@ const ExportManager = {
         }, 250);
     },
 
+    exportHTML(content) {
+        // Check if content is a complete HTML document
+        const isCompleteHTML = /^\s*<!DOCTYPE\s+html/i.test(content.trim());
+
+        if (isCompleteHTML) {
+            // Export as-is (raw HTML file)
+            this.downloadFile(content, 'file.html', 'text/html');
+        } else {
+            // Detect if content is plain text/code or markdown
+            const isPlainText = this.isPlainTextContent(content);
+
+            let bodyContent;
+            if (isPlainText) {
+                // Export as plain text with preserved formatting
+                bodyContent = `<pre style="white-space: pre-wrap; font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;">${this.escapeHtml(content)}</pre>`;
+            } else {
+                // Export as rendered markdown
+                bodyContent = marked.parse(content);
+            }
+
+            const fullHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note</title>
+    <style>
+        body {
+            font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            color: #000;
+            font-size: 16px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 16px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 3px solid #e0e0e0;
+            padding-left: 1em;
+            color: #666;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            font-weight: 600;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+${bodyContent}
+</body>
+</html>`;
+            this.downloadFile(fullHTML, 'file.html', 'text/html');
+        }
+    },
+
+    isPlainTextContent(text) {
+        // Count HTML-like tags
+        const htmlTagCount = (text.match(/<[^>]+>/g) || []).length;
+        const lines = text.split('\n').length;
+
+        // If more than 30% of lines have HTML tags, treat as plain text
+        return htmlTagCount > lines * 0.3;
+    },
+
+    escapeHtml(text) {
+        return text.replace(/&/g, '&amp;')
+                   .replace(/</g, '&lt;')
+                   .replace(/>/g, '&gt;')
+                   .replace(/"/g, '&quot;')
+                   .replace(/'/g, '&#39;');
+    },
+
     updateVisibility(content) {
         if (content.trim().length > 0) {
             DOM.exportButtons.classList.add('visible');
@@ -162,18 +267,51 @@ const ExportManager = {
         }
     },
 
+    copyToClipboard(content) {
+        const copyIcon = document.querySelector('.copy-icon');
+
+        navigator.clipboard.writeText(content).then(() => {
+            this.showCopySuccess(copyIcon);
+        }).catch(err => {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = content;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            this.showCopySuccess(copyIcon);
+        });
+    },
+
+    showCopySuccess(iconElement) {
+        const originalSrc = iconElement.src;
+        iconElement.src = 'icon/copy done.png';
+
+        setTimeout(() => {
+            iconElement.src = originalSrc;
+        }, 600);
+    },
+
     init() {
         DOM.exportBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                const action = btn.dataset.action;
                 const format = btn.dataset.format;
                 const content = Storage.load();
 
-                if (format === 'txt') {
+                if (action === 'copy') {
+                    this.copyToClipboard(content);
+                } else if (format === 'txt') {
                     this.exportTXT(content);
                 } else if (format === 'md') {
                     this.exportMD(content);
                 } else if (format === 'pdf') {
                     this.exportPDF(content);
+                } else if (format === 'html') {
+                    this.exportHTML(content);
                 }
             });
         });
@@ -235,8 +373,36 @@ const EditorManager = {
 
     switchToPreview(markdown, cursorPos) {
         DOM.input.style.display = 'none';
-        DOM.preview.innerHTML = marked.parse(markdown);
+
+        // Detect if content is mostly HTML/code (not markdown)
+        const isPlainText = this.isPlainTextContent(markdown);
+
+        if (isPlainText) {
+            // Render as plain text with preserved formatting
+            DOM.preview.innerHTML = `<pre style="white-space: pre-wrap; font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;">${this.escapeHtml(markdown)}</pre>`;
+        } else {
+            // Render as markdown
+            DOM.preview.innerHTML = marked.parse(markdown);
+        }
+
         DOM.preview.style.display = 'block';
+    },
+
+    isPlainTextContent(text) {
+        // Count HTML-like tags
+        const htmlTagCount = (text.match(/<[^>]+>/g) || []).length;
+        const lines = text.split('\n').length;
+
+        // If more than 30% of lines have HTML tags, treat as plain text
+        return htmlTagCount > lines * 0.3;
+    },
+
+    escapeHtml(text) {
+        return text.replace(/&/g, '&amp;')
+                   .replace(/</g, '&lt;')
+                   .replace(/>/g, '&gt;')
+                   .replace(/"/g, '&quot;')
+                   .replace(/'/g, '&#39;');
     },
 
     saveContent(content) {
@@ -290,7 +456,16 @@ const App = {
 
     loadSavedContent() {
         const savedMarkdown = Storage.load();
-        DOM.preview.innerHTML = marked.parse(savedMarkdown);
+
+        // Auto-detect plain text vs markdown
+        const isPlainText = EditorManager.isPlainTextContent(savedMarkdown);
+
+        if (isPlainText) {
+            DOM.preview.innerHTML = `<pre style="white-space: pre-wrap; font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;">${EditorManager.escapeHtml(savedMarkdown)}</pre>`;
+        } else {
+            DOM.preview.innerHTML = marked.parse(savedMarkdown);
+        }
+
         DOM.input.value = savedMarkdown;
         ExportManager.updateVisibility(savedMarkdown);
     },
