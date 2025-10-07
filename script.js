@@ -3,6 +3,7 @@
 // ============================================================================
 const CONFIG = {
     STORAGE_KEY: 'noteMarkdown',
+    PERSIST_MODE_KEY: 'persistMode',
     LINE_HEIGHT: 1.6 * 16,
     PADDING: 20,
     AUTOSAVE_DELAY: 500
@@ -17,7 +18,9 @@ const DOM = {
     preview: document.querySelector('.markdown-preview'),
     input: document.querySelector('.markdown-input'),
     exportButtons: document.querySelector('.export-buttons'),
-    exportBtns: document.querySelectorAll('.export-btn')
+    exportBtns: document.querySelectorAll('.export-btn'),
+    persistToggle: document.querySelector('.persist-toggle'),
+    persistIcon: document.querySelector('.persist-icon')
 };
 
 // ============================================================================
@@ -45,12 +48,48 @@ const MarkdownConfig = {
 // STORAGE MANAGER
 // ============================================================================
 const Storage = {
+    isPersistMode() {
+        return localStorage.getItem(CONFIG.PERSIST_MODE_KEY) === 'true';
+    },
+
     save(content) {
-        sessionStorage.setItem(CONFIG.STORAGE_KEY, content);
+        if (this.isPersistMode()) {
+            localStorage.setItem(CONFIG.STORAGE_KEY, content);
+        } else {
+            sessionStorage.setItem(CONFIG.STORAGE_KEY, content);
+        }
     },
 
     load() {
-        return sessionStorage.getItem(CONFIG.STORAGE_KEY) || '';
+        if (this.isPersistMode()) {
+            return localStorage.getItem(CONFIG.STORAGE_KEY) || '';
+        } else {
+            return sessionStorage.getItem(CONFIG.STORAGE_KEY) || '';
+        }
+    },
+
+    togglePersistMode() {
+        const currentMode = this.isPersistMode();
+        const newMode = !currentMode;
+
+        localStorage.setItem(CONFIG.PERSIST_MODE_KEY, String(newMode));
+
+        // Transfer content between storage types
+        const content = currentMode
+            ? localStorage.getItem(CONFIG.STORAGE_KEY) || ''
+            : sessionStorage.getItem(CONFIG.STORAGE_KEY) || '';
+
+        if (newMode) {
+            // Switch to persistent
+            localStorage.setItem(CONFIG.STORAGE_KEY, content);
+            sessionStorage.removeItem(CONFIG.STORAGE_KEY);
+        } else {
+            // Switch to session
+            sessionStorage.setItem(CONFIG.STORAGE_KEY, content);
+            localStorage.removeItem(CONFIG.STORAGE_KEY);
+        }
+
+        return newMode;
     }
 };
 
@@ -61,6 +100,34 @@ const ThemeManager = {
     init() {
         DOM.trigger.addEventListener('click', () => {
             DOM.body.classList.toggle('dark-mode');
+        });
+    }
+};
+
+// ============================================================================
+// PERSIST MANAGER
+// ============================================================================
+const PersistManager = {
+    updateIcon() {
+        const isPersist = Storage.isPersistMode();
+        DOM.persistIcon.src = isPersist ? 'icon/copy done.png' : 'icon/close.png';
+    },
+
+    toggle() {
+        const newMode = Storage.togglePersistMode();
+        this.updateIcon();
+
+        // Visual feedback
+        DOM.persistIcon.style.opacity = '1';
+        setTimeout(() => {
+            DOM.persistIcon.style.opacity = '';
+        }, 300);
+    },
+
+    init() {
+        this.updateIcon();
+        DOM.persistToggle.addEventListener('click', () => {
+            this.toggle();
         });
     }
 };
@@ -461,6 +528,7 @@ const App = {
     init() {
         MarkdownConfig.init();
         ThemeManager.init();
+        PersistManager.init();
         ExportManager.init();
         this.loadSavedContent();
         this.attachEventListeners();

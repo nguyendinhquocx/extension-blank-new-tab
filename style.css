@@ -259,11 +259,33 @@ body.dark-mode .export-btn:hover {
     filter: invert(0);
 }
 
-.copy-btn:hover .copy-icon,
-.export-buttons:hover .copy-icon {
+.copy-btn:hover .copy-icon {
     opacity: 1;
 }
 
 body.dark-mode .copy-icon {
+    filter: invert(1);
+}
+
+.persist-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.persist-icon {
+    width: 10px;
+    height: 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    filter: invert(0);
+}
+
+.persist-toggle:hover .persist-icon {
+    opacity: 1;
+}
+
+body.dark-mode .persist-icon {
     filter: invert(1);
 }
