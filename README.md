@@ -9,6 +9,12 @@ Minimal markdown note-taking on every new tab. Write, preview, export.
 - Live markdown rendering
 - Automatic save to browser
 - Seamless switching between edit and preview
+- Stay in edit mode when switching tabs - only saves when you click outside
+
+**Storage Modes**
+- Session mode (default): Each tab has its own independent note, cleared when tab closes
+- Persistent mode (toggle icon): Save notes permanently across all tabs and sessions
+- Switch between modes anytime with one click
 
 **Dark Mode**
 - One-click toggle (top-right circle)
@@ -27,7 +33,7 @@ Minimal markdown note-taking on every new tab. Write, preview, export.
 - Black and white aesthetic
 - No tracking, no analytics
 - Lightning-fast performance
-- Each tab is independent
+- Flexible storage: choose session or persistent mode
 
 ## Usage
 
@@ -38,7 +44,7 @@ Minimal markdown note-taking on every new tab. Write, preview, export.
 
 ## Privacy
 
-All notes are stored locally in your browser using `sessionStorage`. Each tab has its own independent note. Your data never leaves your device.
+Choose your storage mode: session mode (independent notes per tab) or persistent mode (notes saved across all tabs). All data stored locally in your browser and never leaves your device. No tracking, no data collection, completely offline.
 
 ## Support
 
@@ -65,6 +71,12 @@ Write & Preview
 • Automatic save to browser storage
 • Seamless switching between edit and preview
 • Smart detection: auto-recognizes plain text vs markdown
+• Stay in edit mode when switching tabs - only saves when you click outside
+
+Storage Modes
+• Session mode (default): Each tab has its own independent note, cleared when tab closes
+• Persistent mode (toggle icon): Save notes permanently across all tabs and sessions
+• Switch between modes anytime with one click
 
 Dark Mode
 • One-click toggle
@@ -93,7 +105,7 @@ PERFECT FOR
 • Distraction-free writing
 
 PRIVACY FIRST
-Each tab is independent with its own note. Notes are stored locally in sessionStorage and never leave your browser. No tracking, no data collection, completely offline.
+Choose your storage mode: independent sessions per tab or persistent notes across all tabs. All data stored locally in your browser and never leaves your device. No tracking, no data collection, completely offline.
 
 Built with speed and simplicity in mind. Every new tab is a blank canvas.
 ```

@@ -501,19 +501,35 @@ const EditorManager = {
 // EVENT HANDLERS
 // ============================================================================
 const EventHandlers = {
+    isEditMode: false,
+
     onDoubleClick(e) {
         if (e.target === DOM.trigger) return;
 
         const clickY = e.clientY;
+        this.isEditMode = true;
         EditorManager.switchToEdit(clickY);
     },
 
-    onBlur() {
-        const markdown = DOM.input.value;
-        const cursorPos = DOM.input.selectionStart;
+    onMouseDown(e) {
+        // Only handle clicks outside textarea when in edit mode
+        if (!this.isEditMode) return;
 
-        EditorManager.saveContent(markdown);
-        EditorManager.switchToPreview(markdown, cursorPos);
+        // Check if click is outside textarea and export buttons
+        if (e.target !== DOM.input &&
+            !DOM.exportButtons.contains(e.target) &&
+            e.target !== DOM.trigger &&
+            e.target !== DOM.persistToggle &&
+            !DOM.persistToggle.contains(e.target)) {
+
+            this.isEditMode = false;
+
+            const markdown = DOM.input.value;
+            const cursorPos = DOM.input.selectionStart;
+
+            EditorManager.saveContent(markdown);
+            EditorManager.switchToPreview(markdown, cursorPos);
+        }
     },
 
     onInput() {
@@ -551,8 +567,8 @@ const App = {
     },
 
     attachEventListeners() {
-        DOM.body.addEventListener('dblclick', EventHandlers.onDoubleClick);
-        DOM.input.addEventListener('blur', EventHandlers.onBlur);
+        DOM.body.addEventListener('dblclick', EventHandlers.onDoubleClick.bind(EventHandlers));
+        DOM.body.addEventListener('mousedown', EventHandlers.onMouseDown.bind(EventHandlers));
         DOM.input.addEventListener('input', EventHandlers.onInput);
     }
 };
