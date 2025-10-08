@@ -225,9 +225,9 @@ body.dark-mode .trigger:hover {
 }
 
 .export-btn {
-    color: #fff;
+    color: #000;
     font-size: 12px;
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: 0.3px;
     cursor: pointer;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -237,14 +237,16 @@ body.dark-mode .trigger:hover {
 
 .export-btn:hover {
     color: #000;
+    opacity: 0.6;
 }
 
 body.dark-mode .export-btn {
-    color: #000;
+    color: #fff;
 }
 
 body.dark-mode .export-btn:hover {
     color: #fff;
+    opacity: 0.6;
 }
 
 .copy-btn {
@@ -256,13 +258,9 @@ body.dark-mode .export-btn:hover {
 .copy-icon {
     width: 12px;
     height: 12px;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.2s;
     filter: invert(0);
-}
-
-.copy-btn:hover .copy-icon {
-    opacity: 1;
 }
 
 body.dark-mode .copy-icon {
@@ -279,13 +277,9 @@ body.dark-mode .copy-icon {
 .persist-icon {
     width: 10px;
     height: 10px;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.2s;
     filter: invert(0);
-}
-
-.persist-toggle:hover .persist-icon {
-    opacity: 1;
 }
 
 body.dark-mode .persist-icon {
