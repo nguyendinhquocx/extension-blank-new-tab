@@ -403,6 +403,24 @@ ${bodyContent}
 const ScrollManager = {
     calculateCursorY(lineNumber) {
         return CONFIG.PADDING + (lineNumber - 1) * CONFIG.LINE_HEIGHT;
+    },
+
+    handleScroll() {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+
+        if (scrollTop > 100) {
+            // Scrolled down - hide buttons
+            DOM.trigger.classList.add('hidden');
+            DOM.exportButtons.classList.add('hidden');
+        } else {
+            // At top - show buttons
+            DOM.trigger.classList.remove('hidden');
+            DOM.exportButtons.classList.remove('hidden');
+        }
+    },
+
+    init() {
+        window.addEventListener('scroll', () => this.handleScroll());
     }
 };
 
@@ -546,6 +564,7 @@ const App = {
         ThemeManager.init();
         PersistManager.init();
         ExportManager.init();
+        ScrollManager.init();
         this.loadSavedContent();
         this.attachEventListeners();
     },

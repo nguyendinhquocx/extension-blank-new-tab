@@ -195,7 +195,18 @@ body.dark-mode .markdown-preview th {
     background-color: #fff;
     border-radius: 50%;
     cursor: pointer;
-    transition: background-color 0.3s;
+    opacity: 1;
+    transition: background-color 0.3s, opacity 0.3s ease;
+}
+
+.trigger.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.trigger.hidden:hover {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .trigger:hover {
@@ -218,10 +229,22 @@ body.dark-mode .trigger:hover {
     flex-direction: column;
     gap: 12px;
     align-items: flex-end;
+    opacity: 1;
+    transition: opacity 0.3s ease;
 }
 
 .export-buttons.visible {
     display: flex;
+}
+
+.export-buttons.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.export-buttons.hidden:hover {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .export-btn {
